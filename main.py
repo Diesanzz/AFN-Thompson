@@ -111,7 +111,9 @@ class AFN:
 
         return f
 
-    def concatenar(self, f2):
+    def concatenar(self, f2, nuevo_id):
+        id1 = self.id_afn
+        id2 = f2.id_afn
 
         # Cada estado del primer AFN
         for estado_acept in self.edos_acept:
@@ -131,9 +133,17 @@ class AFN:
         self.edos_acept = f2.edos_acept
         self.alfabeto.update(f2.alfabeto)
 
+        self.registrar_resultado(
+            nuevo_id,
+            [id1, id2]
+        )
+
         return self
 
-    def unir(self, f2):
+    def unir(self, f2, nuevo_id):
+
+        id1 = self.id_afn
+        id2 = f2.id_afn
 
         # Aqui se crean nuevos estados, tanto final como inicial
         nuevo_ini = Estado()
@@ -178,9 +188,16 @@ class AFN:
         # Tambien se actualiza el alfabeto
         self.alfabeto.update(f2.alfabeto)
 
+        self.registrar_resultado(
+            nuevo_id,
+            [id1, id2]
+        )
+
         return self
 
-    def cerradura_pos(self):
+    def cerradura_pos(self, nuevo_id=None):
+
+        id_anterior = self.id_afn
 
         # Aqui vamos a crear los nuevos estados para la cerradura
         nuevo_ini = Estado()
@@ -211,9 +228,16 @@ class AFN:
         self.edo_ini = nuevo_ini
         self.edos_acept = {nuevo_fin}
 
+        self.registrar_resultado(
+            nuevo_id,
+            [id_anterior]
+        )
+
         return self
 
-    def cerradura_kleene(self):
+    def cerradura_kleene(self, nuevo_id):
+
+        id_anterior = self.id_afn
 
         # Aplicamos primero la cerradura positiva
         self.cerradura_pos()
@@ -226,9 +250,16 @@ class AFN:
                 Transicion(self.EPSILON, estado_acept)
             )
 
+        self.registrar_resultado(
+            nuevo_id,
+            [id_anterior]
+        )
+
         return self
 
-    def opcional(self):
+    def opcional(self, nuevo_id):
+
+        id_anterior = self.id_afn
 
         # Nuevos estados
         nuevo_ini = Estado()
@@ -258,6 +289,11 @@ class AFN:
 
         self.edo_ini = nuevo_ini
         self.edos_acept = {nuevo_fin}
+
+        self.registrar_resultado(
+            nuevo_id,
+            [id_anterior]
+        )
 
         return self
 
@@ -320,6 +356,32 @@ class AFN:
             print(f"{origen}\t{simbolo}\t{destino}")
 
         print("----------------------")
+
+    def registrar_resultado(self, nuevo_id, ids_eliminar=None):
+
+        if nuevo_id is None or nuevo_id == "":
+            raise ValueError("El AFN resultante debe tener un ID.")
+
+        # Revisamos que el nuevo ID no pertenezca a otro AFN
+        if (
+            nuevo_id in AFN.afns_creados
+            and AFN.afns_creados[nuevo_id] is not self
+        ):
+            raise ValueError(
+                f"Ya existe un AFN con el ID `{nuevo_id}`."
+            )
+
+        # Eliminamos los AFN que participaron en la operacion
+        if ids_eliminar is not None:
+            for id_afn in ids_eliminar:
+                if id_afn in AFN.afns_creados:
+                    del AFN.afns_creados[id_afn]
+
+        # Cambiamos el ID del resultado
+        self.id_afn = nuevo_id
+
+        # Lo registramos
+        AFN.afns_creados[nuevo_id] = self
     
 
     
@@ -330,16 +392,22 @@ class AFN:
 
 if __name__ == "__main__":
 
-    afn1 = AFN().crear_basico("a", id_afn="A")
-    afn2 = AFN().crear_basico("b", id_afn="B")
-    afn3 = AFN().crear_basico("0", "9", id_afn="Digitos")
+    afn1 = AFN().crear_basico(
+        "a",
+        id_afn="A"
+    )
 
-    print("AFN guardados:")
+    afn2 = AFN().crear_basico(
+        "b",
+        id_afn="B"
+    )
+
+    print("Antes:")
     print(AFN.obtener_ids())
 
-    print()
+    afn1.unir(afn2, "A_o_B")
 
-    afn = AFN.obtener_afn("Digitos")
+    print("\nDespués:")
+    print(AFN.obtener_ids())
 
-    print("AFN seleccionado:", afn.id_afn)
-    afn.ver_afn()
+    AFN.obtener_afn("A_o_B").ver_afn()

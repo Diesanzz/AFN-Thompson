@@ -91,42 +91,58 @@ class AFN:
 
         return f
 
+    def concatenar(self, f2):
+
+        # Cada estado del primer AFN
+        for estado_acept in self.edos_acept:
+
+            # Deajra de ser estado de aceptacion
+            estado_acept.edo_acept = False
+
+            # Luego se copian las transiciones del estado ini del f2
+            for transicion in f2.edo_ini.transiciones:
+                estado_acept.transiciones.append(transicion)
+
+        # Se elimina el estado inicial de f2
+        f2.edos_afn.discard(f2.edo_ini)
+
+        # Y terminamos de juntar los estados de f2 al primer AFN
+        self.edos_afn.update(f2.edos_afn)
+        self.edos_acept = f2.edos_acept
+        self.alfabeto.update(f2.alfabeto)
+
+        return self
+
+# --------
 # a partir de aqui es como el test bench, la parte de pruebas
+# --------
+
 
 if __name__ == "__main__":
 
     afn1 = AFN().crear_basico("a")
+    afn2 = AFN().crear_basico("b")
 
-    print("AFN 1")
+    afn1.concatenar(afn2)
+
+    print("AFN CONCATENADO")
+
     print("Estado inicial:", afn1.edo_ini)
-    print("Estados: ", afn1.edos_afn) 
-    print("Estados de aceptacion: ", afn1.edos_acept)
-    print("Alfabeto: ", afn1.alfabeto)
 
-    print("\nTransiciones")
+    print(
+        "Estados:",
+        sorted(afn1.edos_afn, key=lambda e: e.id_edo)
+    )
 
-    for estado in afn1.edos_afn:
-        for transicion in estado.transiciones:
-            print(
-                estado,
-                transicion
-            )
+    print(
+        "Estados de aceptacion:",
+        sorted(afn1.edos_acept, key=lambda e: e.id_edo)
+    )
 
-    print()
-
-    afn2 = AFN().crear_basico("a", "z")
-
-    print("AFN 2")
-    print("Estado inicial:", afn2.edo_ini)
-    print("Estados:", afn2.edos_afn)
-    print("Estados de aceptacion:", afn2.edos_acept)
-    print("Alfabeto:", afn2.alfabeto)
+    print("Alfabeto:", sorted(afn1.alfabeto))
 
     print("\nTransiciones:")
 
-    for estado in afn2.edos_afn:
+    for estado in sorted(afn1.edos_afn, key=lambda e: e.id_edo):
         for transicion in estado.transiciones:
-            print(
-                estado,
-                transicion
-            )
+            print(estado, transicion)

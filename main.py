@@ -193,6 +193,20 @@ class AFN:
 
         return self
 
+    def cerradura_kleene(self):
+
+        # Aplicamos primero la cerradura positiva
+        self.cerradura_pos()
+
+        # Ahora ponemos la transicion del estado 
+        # incial al final
+
+        for estado_acept in self.edos_acept:
+            self.edo_ini.transiciones.append(
+                Transicion(self.EPSILON, estado_acept)
+            )
+
+        return self
 # --------
 # a partir de aqui es como el test bench, la parte de pruebas
 # --------
@@ -202,9 +216,9 @@ if __name__ == "__main__":
 
     afn1 = AFN().crear_basico("a")
 
-    afn1.cerradura_pos()
+    afn1.cerradura_kleene()
 
-    print("AFN CERRADURA POSITIVA")
+    print("AFN CERRADURA KLEENE")
     print("Estado inicial:", afn1.edo_ini)
 
     print(

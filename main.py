@@ -38,13 +38,24 @@ class Transicion:
 class AFN:
     EPSILON = "ε"
 
-    def __init__(self):
+    afns_creados = {}
+
+    def __init__(self, id_afn=None):
+        self.id_afn = id_afn
         self.alfabeto = set()
         self.edo_ini = None
         self.edos_acept = set()
         self.edos_afn = set()
 
-    def crear_basico(self, simb1, simb2=None):
+    @staticmethod
+    def obtener_afn(id_afn):
+        return AFN.afns_creados.get(id_afn)
+
+    @staticmethod
+    def obtener_ids():
+        return list(AFN.afns_creados.keys())
+
+    def crear_basico(self, simb1, simb2=None, id_afn=None):
         # Si no se manda simb2, entonces se creara
         # Un AFN de un solo simbolo
         if simb2 is None:
@@ -61,8 +72,13 @@ class AFN:
                 "El simbolo inferior no puede ser mayor al superior."
             )
 
+        if id_afn is not None and id_afn in AFN.afns_creados:
+            raise ValueError(
+                f"Ya existe un AFN con el ID `{id_afn}`."
+            )
+
         # Aqui se creara el AFN nuevo
-        f = AFN()
+        f = AFN(id_afn)
 
         # Aquie creamos sus dos estados
         e1 = Estado()
@@ -89,6 +105,9 @@ class AFN:
         # y la funcion chr() nos devuelve el caracter a partir de su valor numerico
         for codigo in range(ord(simb1), ord(simb2) + 1):
             f.alfabeto.add(chr(codigo))
+
+        if id_afn is not None:
+            AFN.afns_creados[id_afn] = f
 
         return f
 
@@ -286,7 +305,7 @@ class AFN:
         print(
             "Estados de aceptacion:",
             [e.id_edo for e in sorted(
-                self.edos_afn,
+                self.edos_acept,
                 key=lambda e: e.id_edo
             )]
         )
@@ -311,9 +330,16 @@ class AFN:
 
 if __name__ == "__main__":
 
-    afn1 = AFN().crear_basico("a")
-    afn2 = AFN().crear_basico("b")
+    afn1 = AFN().crear_basico("a", id_afn="A")
+    afn2 = AFN().crear_basico("b", id_afn="B")
+    afn3 = AFN().crear_basico("0", "9", id_afn="Digitos")
 
-    afn1.unir(afn2)
+    print("AFN guardados:")
+    print(AFN.obtener_ids())
 
-    afn1.ver_afn()
+    print()
+
+    afn = AFN.obtener_afn("Digitos")
+
+    print("AFN seleccionado:", afn.id_afn)
+    afn.ver_afn()

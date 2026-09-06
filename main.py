@@ -160,6 +160,39 @@ class AFN:
 
         return self
 
+    def cerradura_pos(self):
+
+        # Aqui vamos a crear los nuevos estados para la cerradura
+        nuevo_ini = Estado()
+        nuevo_fin = Estado()
+
+        nuevo_fin.edo_acept = True
+
+        nuevo_ini.transiciones.append(
+            Transicion(self.EPSILON, self.edo_ini)
+        )
+
+        # Volvemos a hacer lo de reemplazar estados 
+        # finales e iniciales
+        for estado in self.edos_acept:
+            estado.edo_acept = False
+
+            estado.transiciones.append(
+                Transicion(self.EPSILON, self.edo_ini)
+            )
+
+            estado.transiciones.append(
+                Transicion(self.EPSILON, nuevo_fin)
+            )
+
+        self.edos_afn.add(nuevo_ini)
+        self.edos_afn.add(nuevo_fin)
+
+        self.edo_ini = nuevo_ini
+        self.edos_acept = {nuevo_fin}
+
+        return self
+
 # --------
 # a partir de aqui es como el test bench, la parte de pruebas
 # --------
@@ -168,12 +201,10 @@ class AFN:
 if __name__ == "__main__":
 
     afn1 = AFN().crear_basico("a")
-    afn2 = AFN().crear_basico("b")
 
-    afn1.unir(afn2)
+    afn1.cerradura_pos()
 
-    print("AFN UNIDO")
-
+    print("AFN CERRADURA POSITIVA")
     print("Estado inicial:", afn1.edo_ini)
 
     print(

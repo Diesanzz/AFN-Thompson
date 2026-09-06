@@ -113,6 +113,53 @@ class AFN:
 
         return self
 
+    def unir(self, f2):
+
+        # Aqui se crean nuevos estados, tanto final como inicial
+        nuevo_ini = Estado()
+        nuevo_fin = Estado()
+
+        #Ahora el nuevo fin sera de aceptacion
+        nuevo_fin.edo_acept = True
+
+        #Ponemos las transiciones del nuevo estado inicial 
+        # a los estados iniciales de ambos AFN
+        nuevo_ini.transiciones.append(
+            Transicion(self.EPSILON, self.edo_ini)
+        )
+
+        nuevo_ini.transiciones.append(
+            Transicion(self.EPSILON, f2.edo_ini)
+        )
+
+        #Eliminamos los anteriores estados de aceptacion
+        for estado in self.edos_acept:
+            estado.edo_acept = False
+            estado.transiciones.append(
+                Transicion(self.EPSILON, nuevo_fin)
+            )
+
+        for estado in f2.edos_acept:
+            estado.edo_acept = False
+            estado.transiciones.append(
+                Transicion(self.EPSILON, nuevo_fin)
+            )
+
+        # Unimos todos los estados ahora si
+        self.edos_afn.update(f2.edos_afn)
+
+        self.edos_afn.add(nuevo_ini)
+        self.edos_afn.add(nuevo_fin)
+
+        # Actualizamos estado inicial y tambien el de aceptacion
+        self.edo_ini = nuevo_ini
+        self.edos_acept = {nuevo_fin}
+
+        # Tambien se actualiza el alfabeto
+        self.alfabeto.update(f2.alfabeto)
+
+        return self
+
 # --------
 # a partir de aqui es como el test bench, la parte de pruebas
 # --------
@@ -123,9 +170,9 @@ if __name__ == "__main__":
     afn1 = AFN().crear_basico("a")
     afn2 = AFN().crear_basico("b")
 
-    afn1.concatenar(afn2)
+    afn1.unir(afn2)
 
-    print("AFN CONCATENADO")
+    print("AFN UNIDO")
 
     print("Estado inicial:", afn1.edo_ini)
 

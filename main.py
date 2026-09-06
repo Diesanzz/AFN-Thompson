@@ -85,7 +85,8 @@ class AFN:
         f.edos_afn.add(e2)
 
         # Por ultimo agregamos los simbolos del alfabeto
-        #La funcion ord() nos devuelve el valor numerico del caracter, y la funcion chr() nos devuelve el caracter a partir de su valor numerico
+        #La funcion ord() nos devuelve el valor numerico del caracter,
+        # y la funcion chr() nos devuelve el caracter a partir de su valor numerico
         for codigo in range(ord(simb1), ord(simb2) + 1):
             f.alfabeto.add(chr(codigo))
 
@@ -241,6 +242,67 @@ class AFN:
 
         return self
 
+    def obtener_transiciones(self):
+        resultado = []
+
+        for estado in sorted(self.edos_afn, key=lambda e: e.id_edo):
+
+            for transicion in estado.transiciones:
+
+                # Establecemos los simbolos
+                if transicion.simb_inf == self.EPSILON:
+                    simbolo = self.EPSILON
+
+                elif transicion.simb_inf == transicion.simb_sup:
+                    simbolo = transicion.simb_inf
+
+                else:
+                    simbolo = f"{transicion.simb_inf}-{transicion.simb_sup}"
+
+                resultado.append(
+                    (
+                        estado.id_edo,
+                        simbolo,
+                        transicion.edo_dest.id_edo
+                    )
+                )
+
+        return resultado
+
+    def ver_afn(self):
+
+        print("\n            AFN")
+
+        print("Estado inicial:", self.edo_ini.id_edo)
+
+        print(
+            "Estados:",
+            [e.id_edo for e in sorted(
+                self.edos_afn,
+                key=lambda e: e.id_edo
+            )]
+        )
+
+        print(
+            "Estados de aceptacion:",
+            [e.id_edo for e in sorted(
+                self.edos_afn,
+                key=lambda e: e.id_edo
+            )]
+        )
+
+        print("Alfabeto:", sorted(self.alfabeto))
+
+        print("\nTabla de transiciones")
+        print("----------------------")
+        print("Edo\tSimb\tEdo")
+
+        for origen, simbolo, destino in self.obtener_transiciones():
+            print(f"{origen}\t{simbolo}\t{destino}")
+
+        print("----------------------")
+    
+
     
 # --------
 # a partir de aqui es como el test bench, la parte de pruebas
@@ -250,26 +312,8 @@ class AFN:
 if __name__ == "__main__":
 
     afn1 = AFN().crear_basico("a")
+    afn2 = AFN().crear_basico("b")
 
-    afn1.opcional()
+    afn1.unir(afn2)
 
-    print("AFN OPCIONAL")
-    print("Estado inicial:", afn1.edo_ini)
-
-    print(
-        "Estados:",
-        sorted(afn1.edos_afn, key=lambda e: e.id_edo)
-    )
-
-    print(
-        "Estados de aceptacion:",
-        sorted(afn1.edos_acept, key=lambda e: e.id_edo)
-    )
-
-    print("Alfabeto:", sorted(afn1.alfabeto))
-
-    print("\nTransiciones:")
-
-    for estado in sorted(afn1.edos_afn, key=lambda e: e.id_edo):
-        for transicion in estado.transiciones:
-            print(estado, transicion)
+    afn1.ver_afn()

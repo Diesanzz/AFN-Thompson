@@ -81,7 +81,94 @@ class InterfazThompson:
         boton_ver.pack(pady=5)
 
     def ventana_crear_basico(self):
-        pass
+
+        ventana = tk.Toplevel(self.ventana)
+
+        ventana.title("Crear AFN basico")
+        ventana.geometry("350x300")
+
+        titulo = tk.Label(
+            ventana,
+            text="Crear AFN basico",
+            font=("Arial", 16, "bold")
+        )
+
+        titulo.pack(pady=15)
+
+        tk.Label(
+            ventana,
+            text="Simbolo inferior:"
+        ).pack()
+
+        entrada_simb1 = tk.Entry(ventana)
+        entrada_simb1.pack(pady=5)
+
+        tk.Label(
+            ventana,
+            text="Simbolo superior"
+        ).pack()
+
+        entrada_simb2 = tk.Entry(ventana)
+        entrada_simb2.pack(pady=5)
+
+        tk.Label(
+            ventana,
+            text="ID del AFN:"
+        ).pack()
+
+        entrada_id = tk.Entry(ventana)
+        entrada_id.pack(pady=5)
+
+        def crear():
+
+            simb1 = entrada_simb1.get()
+            simb2 = entrada_simb2.get()
+            id_afn = entrada_id.get()
+
+            try:
+
+                if id_afn == "":
+                    raise ValueError(
+                        "Debes introducir un ID para el AFN."
+                    )
+
+                if simb2 == "":
+
+                    AFN().crear_basico(
+                        simb1,
+                        id_afn=id_afn
+                    )
+
+                else:
+
+                    AFN().crear_basico(
+                        simb1,
+                        simb2,
+                        id_afn
+                    )
+
+                messagebox.showinfo(
+                    "AFN creado",
+                    f"El AFN `{id_afn}` fue creado correctamente."
+                )
+
+                ventana.destroy()
+
+            except ValueError as error:
+
+                messagebox.showerror(
+                    "Error",
+                    str(error)
+                )
+
+        boton_crear = tk.Button(
+            ventana,
+            text="Crear",
+            width=15,
+            command=crear
+        )
+
+        boton_crear.pack(pady=5)
 
     def ejecutar(self):
         self.ventana.mainloop()

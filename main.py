@@ -207,6 +207,41 @@ class AFN:
             )
 
         return self
+
+    def opcional(self):
+
+        # Nuevos estados
+        nuevo_ini = Estado()
+        nuevo_fin = Estado()
+
+        nuevo_fin.edo_acept = True
+
+        # Entrar al AFN original
+        nuevo_ini.transiciones.append(
+            Transicion(self.EPSILON, self.edo_ini)
+        )
+
+        # O ir directo al estado final
+        nuevo_ini.transiciones.append(
+            Transicion(self.EPSILON, nuevo_fin)
+        )
+
+        for estado in self.edos_acept:
+            estado.edo_acept = False
+
+            estado.transiciones.append(
+                Transicion(self.EPSILON, nuevo_fin)
+            )
+
+        self.edos_afn.add(nuevo_ini)
+        self.edos_afn.add(nuevo_fin)
+
+        self.edo_ini = nuevo_ini
+        self.edos_acept = {nuevo_fin}
+
+        return self
+
+    
 # --------
 # a partir de aqui es como el test bench, la parte de pruebas
 # --------
@@ -216,9 +251,9 @@ if __name__ == "__main__":
 
     afn1 = AFN().crear_basico("a")
 
-    afn1.cerradura_kleene()
+    afn1.opcional()
 
-    print("AFN CERRADURA KLEENE")
+    print("AFN OPCIONAL")
     print("Estado inicial:", afn1.edo_ini)
 
     print(

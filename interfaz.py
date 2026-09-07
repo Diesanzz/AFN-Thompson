@@ -704,31 +704,51 @@ class InterfazThompson:
 
         boton_aplicar.pack(pady=15)
 
+    def calcular_niveles(self, afn):
 
+        niveles = {afn.edo_ini.id_edo: 0}
+        cola = [afn.edo_ini]
 
+        while cola:
+            actual = cola.pop(0)
+            nivel_actual = niveles[actual.id_edo]
 
+            for transicion in actual.transiciones:
+                destino = transicion.edo_dest
 
+                if destino.id_edo not in niveles:
+                    niveles[destino.id_edo] = nivel_actual + 1
+                    cola.append(destino)
 
+        # Si llegan a haber estados no alcanzados,
+        # los pasamos al final
+        max_nivel = max(niveles.values(), default=0)
 
+        for estado in sorted(afn.edos_afn, key=lambda e: e.id_edo):
+            if estado.id_edo not in niveles:
+                max_nivel += 1
+                niveles[estado.id_edo] = max_nivel
 
+        # Forzamos los estados de aceptación
+        # a aparecer en el último nivel
+        niveles_no_finales = [
+            nivel
+            for id_edo, nivel in niveles.items()
+            if all(
+                estado.id_edo != id_edo
+                for estado in afn.edos_acept
+            )
+        ]
 
+        max_nivel_no_final = max(
+            niveles_no_finales,
+            default=0
+        )
 
+        for estado in afn.edos_acept:
+            niveles[estado.id_edo] = max_nivel_no_final + 1
 
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-        
+        return niveles
 
     def ventana_ver_afn(self):
 
@@ -818,18 +838,29 @@ class InterfazThompson:
         label_alfabeto.pack()
 
 
+        frame_tabla = tk.Frame(ventana)
+        frame_tabla.pack(pady=15)
+
         tabla = ttk.Treeview(
-            ventana,
+            frame_tabla,
             columns=("origen", "simbolo", "destino"),
             show="headings",
-            height=12
+            height=8
         )
+
+        scroll_y = ttk.Scrollbar(
+            frame_tabla,
+            orient="vertical",
+            command=tabla.yview
+        )
+
+        tabla.configure(yscrollcommand=scroll_y.set)
 
         tabla.heading("origen", text="Estado origen")
         tabla.heading("simbolo", text="Simbolo")
         tabla.heading("destino", text="Estado destino")
 
-        tabla.column(
+        tabla.column(   
             "origen",
             width=150,
             anchor="center"
@@ -847,7 +878,8 @@ class InterfazThompson:
             anchor="center"
         )
 
-        tabla.pack(pady=15)
+        tabla.grid(row=0, column=0)
+        scroll_y.grid(row=0, column=1, sticky="ns")
 
         # Con esta funcion mostraremos el AFN
 
@@ -935,83 +967,252 @@ class InterfazThompson:
         ancho = 850
         alto = 400
 
-        centro_x = ancho / 2
-        centro_y = alto / 2
-
-        radio_x = 300
-        radio_y = 130
-
         radio_estado = 25
+        margen_x = 90
+        margen_y = 70
 
         posiciones = {}
 
-        cantidad = len(estados)
+        # Obtenemos el nivel de cada estado
+        niveles = self.calcular_niveles(afn)
 
-        # Aqui vamos a calcular la posicion de cada estado
+        estados_por_nivel = {}
 
-        if cantidad == 1:
+        # Agrupamos los estados según su nivel
+        for estado in estados:
 
-            posiciones[estados[0].id_edo] = (
-                centro_x,
-                centro_y
-            )
+            nivel = niveles[estado.id_edo]
 
-        else:
+            if nivel not in estados_por_nivel:
+                estados_por_nivel[nivel] = []
 
-            for i, estado in  enumerate(estados):
+            estados_por_nivel[nivel].append(estado)
 
-                angulo = (
-                    -math.pi / 2
-                    + (2 * math.pi * i / cantidad)
-                )
+        lista_estados = estados_por_nivel[nivel]
 
-                x = centro_x + radio_x * math.cos(angulo)
-                y = centro_y + radio_y * math.sin(angulo)
-
-                posiciones[estado.id_edo] = (x, y)
-
-        # Obtenemos las transiciones 
-        transiciones = afn.obtener_transiciones()
-
-        pares = (
-            (origen, destino)
-            for origen, simbolo, destino in transiciones
+        max_nivel = max(
+            estados_por_nivel.keys(),
+            default=0
         )
 
-        # Dibujaremos las transiciones
+        cantidad_niveles = max_nivel + 1
+
+        # Espacio horizontal entre niveles
+        if cantidad_niveles == 1:
+            espacio_x = 1
+        else:
+            espacio_x = (
+                ancho - 2 * margen_x
+            ) / (cantidad_niveles - 1)
+
+        # Calculamos la posición de los estados
+        for nivel in sorted(estados_por_nivel.keys()):
+
+            lista_estados = sorted(
+                estados_por_nivel[nivel],
+                key=lambda e: e.id_edo
+            )
+
+            cantidad_estados = len(lista_estados)
+
+            # Si solo hay uno, lo ponemos al centro
+            if cantidad_estados == 1:
+
+                y_positions = [
+                    alto / 2
+                ]
+
+            else:
+
+                espacio_y = (
+                    alto - 2 * margen_y
+                ) / (cantidad_estados - 1)
+
+                y_positions = [
+                    margen_y + i * espacio_y
+                    for i in range(cantidad_estados)
+                ]
+
+            x = margen_x + nivel * espacio_x
+
+            for estado, y in zip(
+                lista_estados,
+                y_positions
+            ):
+                posiciones[estado.id_edo] = (
+                    x,
+                    y
+                )
+
+        # Dibujamos las transiciones
+
+        transiciones = afn.obtener_transiciones()
+
+        # Pares de estados que tienen transición
+        pares = {
+            (origen, destino)
+            for origen, simbolo, destino in transiciones
+        }
+
+        estados_aceptacion = {
+            estado.id_edo
+            for estado in afn.edos_acept
+        }
 
         for origen, simbolo, destino in transiciones:
 
             x1, y1 = posiciones[origen]
             x2, y2 = posiciones[destino]
 
-            #transicion a si mismo
+            nivel_origen = niveles[origen]
+            nivel_destino = niveles[destino]
+
+            # Transicion al mismo estado
 
             if origen == destino:
 
                 canvas.create_line(
-                    x1, 
+                    x1,
                     y1 - radio_estado,
+
                     x1 + 35,
                     y1 - 60,
+
                     x1 - 35,
                     y1 - 60,
-                    x1, 
+
+                    x1,
                     y1 - radio_estado,
+
                     smooth=True,
-                    arrow=tk.LAST
+                    arrow=tk.LAST,
+                    width=2
                 )
 
                 canvas.create_text(
-                    x1 + 5,
+                    x1,
                     y1 - 75,
-                    text = simbolo,
+                    text=simbolo,
                     font=("Arial", 11, "bold")
                 )
 
                 continue
 
-            # Distancia entre estados
+            # El salto del inicial al final va por debajo del AFN
+
+            if (
+                origen == afn.edo_ini.id_edo
+                and destino in estados_aceptacion
+            ):
+
+                control_x = (x1 + x2) / 2
+                control_y = alto - 20
+
+                canvas.create_line(
+                    x1,
+                    y1 + radio_estado,
+
+                    control_x,
+                    control_y,
+
+                    x2,
+                    y2 + radio_estado,
+
+                    smooth=True,
+                    arrow=tk.LAST,
+                    width=2
+                )
+
+                inicio_x = x1
+                inicio_y = y1 + radio_estado
+
+                fin_x = x2
+                fin_y = y2 + radio_estado
+
+                texto_x = (
+                    inicio_x
+                    + 2 * control_x
+                    + fin_x
+                ) / 4
+
+                texto_y = (
+                    inicio_y
+                    + 2 * control_y
+                    + fin_y
+                ) / 4
+
+                canvas.create_text(
+                    texto_x,
+                    texto_y - 8,
+                    text=simbolo,
+                    font=("Arial", 11, "bold")
+                )
+
+                continue
+
+            # Las transiciones hacia atras van por arriba
+
+            if nivel_destino < nivel_origen:
+
+                diferencia_niveles = (
+                    nivel_origen - nivel_destino
+                )
+
+                altura_arco = (
+                    50 + diferencia_niveles * 15
+                )
+
+                control_x = (x1 + x2) / 2
+
+                control_y = max(
+                    20,
+                    min(y1, y2) - altura_arco
+                )
+
+                canvas.create_line(
+                    x1,
+                    y1 - radio_estado,
+
+                    control_x,
+                    control_y,
+
+                    x2,
+                    y2 - radio_estado,
+
+                    smooth=True,
+                    arrow=tk.LAST,
+                    width=2
+                )
+
+                inicio_x = x1
+                inicio_y = y1 - radio_estado
+
+                fin_x = x2
+                fin_y = y2 - radio_estado
+
+                texto_x = (
+                    inicio_x
+                    + 2 * control_x
+                    + fin_x
+                ) / 4
+
+                texto_y = (
+                    inicio_y
+                    + 2 * control_y
+                    + fin_y
+                ) / 4
+
+                canvas.create_text(
+                    texto_x,
+                    texto_y - 8,
+                    text=simbolo,
+                    font=("Arial", 11, "bold")
+                )
+
+                continue
+
+            # Transiciones hacia adelante
+
             dx = x2 - x1
             dy = y2 - y1
 
@@ -1025,15 +1226,25 @@ class InterfazThompson:
             ux = dx / distancia
             uy = dy / distancia
 
-            # Con esto impedimos que la linea entre al circulo
-            inicio_x = x1 + ux * radio_estado
-            inicio_y = y1 + uy * radio_estado
+            # Evitamos que la flecha entre
+            # hasta el centro del círculo
+            inicio_x = (
+                x1 + ux * radio_estado
+            )
 
-            fin_x = x2 - ux * radio_estado
-            fin_y = y2 - uy * radio_estado
+            inicio_y = (
+                y1 + uy * radio_estado
+            )
 
-            # Curvamos las flechas en caso de 
-            # transiciones en sentido contrario
+            fin_x = (
+                x2 - ux * radio_estado
+            )
+
+            fin_y = (
+                y2 - uy * radio_estado
+            )
+
+            # Curvamos la flecha si hay transicion en ambos sentidos
 
             if (destino, origen) in pares:
 
@@ -1044,7 +1255,7 @@ class InterfazThompson:
 
                 medio_x = (
                     (inicio_x + fin_x) / 2
-                    + perpendicular_y * desplazamiento
+                    + perpendicular_x * desplazamiento
                 )
 
                 medio_y = (
@@ -1055,24 +1266,32 @@ class InterfazThompson:
                 canvas.create_line(
                     inicio_x,
                     inicio_y,
+
                     medio_x,
                     medio_y,
+
                     fin_x,
                     fin_y,
+
                     smooth=True,
                     arrow=tk.LAST,
                     width=2
                 )
 
                 canvas.create_text(
-                    (medio_x + perpendicular_x * 10) + 5,
-                    medio_y + perpendicular_y * 10,
+                    medio_x
+                    + perpendicular_x * 10,
+
+                    medio_y
+                    + perpendicular_y * 10,
+
                     text=simbolo,
                     font=("Arial", 11, "bold")
                 )
 
             else:
 
+                # Flecha normal
                 canvas.create_line(
                     inicio_x,
                     inicio_y,
@@ -1082,63 +1301,152 @@ class InterfazThompson:
                     width=2
                 )
 
-                medio_x = (inicio_x + fin_x) / 2
-                medio_y = (inicio_y + fin_y) / 2
+                medio_x = (
+                    inicio_x + fin_x
+                ) / 2
+
+                medio_y = (
+                    inicio_y + fin_y
+                ) / 2
 
                 canvas.create_text(
-                    medio_x + 5,
+                    medio_x,
                     medio_y - 12,
                     text=simbolo,
                     font=("Arial", 11, "bold")
                 )
 
-            # Dibujar estados
+        # Dibujamos los estados despues de las transiciones
 
-            for estado in estados:
-                x, y = posiciones[estado.id_edo]
+        for estado in estados:
 
-                canvas.create_oval(
-                    x - radio_estado,
-                    y - radio_estado,
-                    x + radio_estado,
-                    y + radio_estado,
-                    width = 2
-                )
+            x, y = posiciones[
+                estado.id_edo
+            ]
 
-                # Ponemos doble circulo para los edos 
-                # de aceptacion
-                if estado in afn.edos_acept:
+            # Círculo principal
+            canvas.create_oval(
+                x - radio_estado,
+                y - radio_estado,
 
-                    canvas.create_oval(
-                        x - radio_estado + 5,
-                        y - radio_estado + 5, 
-                        x + radio_estado - 5, 
-                        y + radio_estado - 5,
-                        width=2
-                    )
+                x + radio_estado,
+                y + radio_estado,
 
-                canvas.create_text(
-                    x + 5, 
-                    y, 
-                    text=str(estado.id_edo),
-                    font=("Arial", 11, "bold")
-                )
-
-            # Flecha de estado incial
-
-            inicial = afn.edo_ini
-
-            x, y = posiciones[inicial.id_edo]
-
-            canvas.create_line(
-                x - radio_estado - 50,
-                y,
-                x - radio_estado - 3,
-                y,
-                arrow=tk.LAST,
                 width=2
             )
 
+            # Doble círculo si es
+            # estado de aceptación
+            if estado in afn.edos_acept:
+
+                canvas.create_oval(
+                    x - radio_estado + 5,
+                    y - radio_estado + 5,
+
+                    x + radio_estado - 5,
+                    y + radio_estado - 5,
+
+                    width=2
+                )
+
+            # ID del estado
+            canvas.create_text(
+                x,
+                y,
+                text=str(estado.id_edo),
+                font=("Arial", 11, "bold")
+            )
+
+        # Flecha que indica el estado inicial
+
+        inicial = afn.edo_ini
+
+        x, y = posiciones[
+            inicial.id_edo
+        ]
+
+        canvas.create_line(
+            x - radio_estado - 50,
+            y,
+
+            x - radio_estado - 3,
+            y,
+
+            arrow=tk.LAST,
+            width=2
+        )
+
+    def ordenar_estados_por_conexiones(
+        self,
+        estados_por_nivel,
+        niveles,
+        afn
+    ):
+
+        transiciones = afn.obtener_transiciones()
+
+        # Empezamos ordenando por ID
+        ordenados = {}
+
+        for nivel, estados in estados_por_nivel.items():
+            ordenados[nivel] = sorted(
+                estados,
+                key=lambda e: e.id_edo
+            )
+
+        # Recorremos las columnas de izquierda a derecha
+        for nivel in sorted(ordenados.keys()):
+
+            if nivel == 0:
+                continue
+
+            nivel_anterior = nivel - 1
+
+            if nivel_anterior not in ordenados:
+                continue
+
+            # Posición vertical lógica de los estados anteriores
+            posiciones_anteriores = {
+                estado.id_edo: i
+                for i, estado in enumerate(
+                    ordenados[nivel_anterior]
+                )
+            }
+
+            def prioridad(estado):
+
+                padres = []
+
+                for origen, simbolo, destino in transiciones:
+
+                    if destino != estado.id_edo:
+                        continue
+
+                    # Solo nos interesan conexiones
+                    # provenientes del nivel anterior
+                    if (
+                        origen in niveles
+                        and niveles[origen] == nivel_anterior
+                        and origen in posiciones_anteriores
+                    ):
+                        padres.append(
+                            posiciones_anteriores[origen]
+                        )
+
+                # Si nadie del nivel anterior llega aquí,
+                # lo dejamos al final
+                if not padres:
+                    return float("inf")
+
+                # Promedio de las posiciones de sus padres
+                return sum(padres) / len(padres)
+
+            ordenados[nivel] = sorted(
+                ordenados[nivel],
+                key=prioridad
+            )
+
+        return ordenados
 
     def ejecutar(self):
         self.ventana.mainloop()

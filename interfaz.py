@@ -45,7 +45,8 @@ class InterfazThompson:
         boton_concatenar = tk.Button(
             self.ventana,
             text="Concatenar AFN",
-            width=25
+            width=25,
+            command=self.ventana_concatenar_afn
         )
 
         boton_concatenar.pack(pady=5)
@@ -297,6 +298,127 @@ class InterfazThompson:
         )
 
         boton_unir.pack(pady=15)
+
+    def ventana_concatenar_afn(self):
+
+        ids = AFN.obtener_ids()
+
+        if len(ids) < 2:
+
+            messagebox.showwarning(
+                "AFN insuficientes",
+                "Necesitas al menos dos AFN para concatenar."
+            )
+            return
+
+        ventana = tk.Toplevel(self.ventana)
+
+        ventana.title("Concatenar AFN")
+        ventana.geometry("350x300")
+
+        titulo = tk.Label(
+            ventana,
+            text="Concatenar AFN",
+            font=("Arial", 11, "bold")
+        )
+
+        titulo.pack(pady=15)
+
+        tk.Label(
+            ventana,
+            text="Primer AFN:"
+        ).pack()
+
+        selector_afn1 = ttk.Combobox(
+            ventana,
+            values=ids,
+            state="readonly",
+            width=25
+        )
+
+        selector_afn1.pack(pady=5)
+        selector_afn1.current(0)
+
+        tk.Label(
+            ventana,
+            text="Segundo AFN:"
+        ).pack()
+
+        selector_afn2 = ttk.Combobox(
+            ventana,
+            values=ids,
+            state="readonly",
+            width=25
+        )
+
+        selector_afn2.pack(pady=5)
+        selector_afn2.current(1)
+
+        tk.Label(
+            ventana,
+            text="ID del nuevo AFN:"
+        ).pack()
+
+        entrada_id = tk.Entry(
+            ventana,
+            width=28
+        )
+
+        entrada_id.pack(pady=5)
+
+        def concatenar():
+
+            id1 = selector_afn1.get()
+            id2 = selector_afn2.get()
+            nuevo_id = entrada_id.get().strip()
+
+            try:
+
+                if id1 == id2:
+                    raise ValueError(
+                        "Debes seleccionar dos AFN diferentes."
+                    )
+
+                if nuevo_id == "":
+                    raise ValueError(
+                        "Debes seleccionar un ID para el AFN resultante."
+                    )
+
+                afn1 = AFN.obtener_afn(id1)
+                afn2 = AFN.obtener_afn(id2)
+
+                afn1.concatenar(
+                    afn2,
+                    nuevo_id
+                )
+
+                messagebox.showinfo(
+                    "Concatenacion realizada",
+                    f"El AFN `{nuevo_id}` fue creado correctamente."
+                )
+
+                ventana.destroy()
+
+            except ValueError as error:
+
+                messagebox.showerror(
+                    "Error",
+                    str(error)
+                )
+
+        boton_concatenar = tk.Button(
+            ventana, 
+            text="Concatenar",
+            width=15,
+            command=concatenar
+        )
+
+        boton_concatenar.pack(pady=15)
+
+
+
+
+
 
 
 

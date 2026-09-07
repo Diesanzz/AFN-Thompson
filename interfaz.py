@@ -63,7 +63,8 @@ class InterfazThompson:
         boton_kleene = tk.Button(
             self.ventana,
             text="Cerradura de Kleene (*)",
-            width=25
+            width=25,
+            command=self.ventana_cerradura_kleene
         )
 
         boton_kleene.pack(pady=5)
@@ -320,7 +321,7 @@ class InterfazThompson:
         titulo = tk.Label(
             ventana,
             text="Concatenar AFN",
-            font=("Arial", 11, "bold")
+            font=("Arial", 16, "bold")
         )
 
         titulo.pack(pady=15)
@@ -435,7 +436,7 @@ class InterfazThompson:
         titulo = tk.Label(
             ventana,
             text="Cerradura Positiva (+)",
-            font=("Arial", 11, "bold")
+            font=("Arial", 16, "bold")
         )
 
         titulo.pack(pady=15)
@@ -511,6 +512,108 @@ class InterfazThompson:
         )
 
         boton_aplicar.pack(pady=15)
+
+    def ventana_cerradura_kleene(self):
+
+        ids = AFN.obtener_ids()
+
+        if not ids:
+            messagebox.showwarning(
+                "AFN faltante",
+                "Debes crear al menos un AFN."
+            )
+            return
+
+        ventana = tk.Toplevel(self.ventana)
+
+        ventana.title("Cerradura de Kleene")
+        ventana.geometry("350x250")
+
+        titulo = tk.Label(
+            ventana,
+            text="Cerradura de Kleene (*)",
+            font=("Arial", 16, "bold")
+        )
+
+        titulo.pack(pady=15)
+
+        # Aqui viene el selector del AFN
+
+        tk.Label(
+            ventana,
+            text="AFN:"
+        ).pack()
+
+        selector_afn = ttk.Combobox(
+            ventana, 
+            values=ids,
+            state="onlyread",
+            width=25
+        )
+
+        selector_afn.pack(pady=5)
+        selector_afn.current(0)
+
+        #Lo de siempreeee, el ID del nuevo afn
+
+        tk.Label(
+            ventana,
+            text="ID del nuevo AFN:"
+        ).pack()
+
+        entrada_id = tk.Entry(
+            ventana,
+            width=28
+        )
+
+        entrada_id.pack(pady=5)
+
+        # Lo mismo x2, aplicar la cerradura
+
+        def aplicar():
+
+            id_afn = selector_afn.get()
+            nuevo_id = entrada_id.get().strip()
+
+            try:
+
+                if nuevo_id == "":
+                    raise ValueError(
+                        "Debes introducir un ID para el AFN resultante."
+                    )
+
+                afn = AFN.obtener_afn(id_afn)
+
+                afn.cerradura_kleene(
+                    nuevo_id
+                )
+
+                messagebox.showinfo(
+                    "Cerradura realizada",
+                    f"El AFN `{nuevo_id}` fue creado correctamente."
+                )
+
+                ventana.destroy()
+
+            except ValueError as error:
+
+                messagebox.showerror(
+                    "Error",
+                    str(error)
+                )
+
+        boton_aplicar = tk.Button(
+            ventana,
+            text="Aplicar",
+            width=15,   
+            command=aplicar
+        )
+
+        boton_aplicar.pack(pady=15)
+
+
+
+
 
 
 

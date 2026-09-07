@@ -240,7 +240,7 @@ class AFN:
         id_anterior = self.id_afn
 
         # Aplicamos primero la cerradura positiva
-        self.cerradura_pos()
+        self.cerradura_pos(nuevo_id)
 
         # Ahora ponemos la transicion del estado 
         # incial al final

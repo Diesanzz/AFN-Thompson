@@ -36,7 +36,8 @@ class InterfazThompson:
         boton_union = tk.Button(
             self.ventana,
             text="Unir AFN",
-            width=25
+            width=25,
+            command=self.ventana_unir_afn
         )
 
         boton_union.pack(pady=5)
@@ -171,6 +172,139 @@ class InterfazThompson:
         )
 
         boton_crear.pack(pady=5)
+
+    def ventana_unir_afn(self):
+
+        ids = AFN.obtener_ids()
+
+        if len(ids) < 2:
+            messagebox.showwarning(
+                "AFN insuficientes",
+                "Debes crear al menos dos AFN para realizar una union."
+            )
+            return
+
+        ventana = tk.Toplevel(self.ventana)
+
+        ventana.title("Unir AFN")
+        ventana.geometry("350x300")
+
+        titulo = tk.Label(
+            ventana,
+            text="Unir AFN",
+            font=("Arial", 16, "bold")
+        )
+
+        titulo.pack(pady=15)
+
+        # Primer AFN
+
+        tk.Label(
+            ventana,
+            text="Primer AFN:"
+        ).pack()
+
+        selector_afn1 = ttk.Combobox(
+            ventana,
+            values=ids,
+            state="readonly",
+            width=25
+        )
+
+        selector_afn1.pack(pady=5)
+        selector_afn1.current(0)
+
+        # Segundo AFN
+
+        tk.Label(
+            ventana,
+            text="Segundo AFN:"
+        ).pack()
+
+        selector_afn2 = ttk.Combobox(
+            ventana, 
+            values=ids,
+            state="readonly",
+            width=25
+        )
+
+        selector_afn2.pack(pady=5)
+
+        if len(ids) > 1:
+            selector_afn2.current(1)
+
+        # ID del resultado
+
+        tk.Label(
+            ventana, 
+            text="ID del nuevo AFN:"
+        ).pack()
+
+        entrada_id = tk.Entry(
+            ventana,
+            width=28
+        )
+
+        entrada_id.pack(pady=5)
+
+        #Accion
+
+        def unir():
+
+            id1 = selector_afn1.get()
+            id2 = selector_afn2.get()
+            nuevo_id = entrada_id.get().strip()
+
+            try:
+
+                if id1 == id2:
+                    raise ValueError(
+                        "Debes seleccionar dos AFN diferentes."
+                    )
+
+                if nuevo_id == "":
+                    raise ValueError(
+                        "Debes introducir un ID para el AFN resultante." 
+                    )
+
+                afn1 = AFN.obtener_afn(id1)
+                afn2 = AFN.obtener_afn(id2)
+
+                afn1.unir(
+                    afn2,
+                    nuevo_id
+                )
+
+                messagebox.showinfo(
+                    "Union realizada",
+                    f"El AFN `{nuevo_id}` fue creado correctamente."
+                )
+
+                ventana.destroy()
+
+            except ValueError as error:
+
+                messagebox.showerror(
+                    "Error",
+                    str(error)
+                )
+
+        boton_unir = tk.Button(
+            ventana,
+            text="Unir",
+            width=15,
+            command=unir
+        )
+
+        boton_unir.pack(pady=15)
+
+
+
+
+
+
+
+        
 
     def ventana_ver_afn(self):
 

@@ -54,7 +54,8 @@ class InterfazThompson:
         boton_pos = tk.Button(
             self.ventana,
             text="Cerradura positiva (+)",
-            width=25
+            width=25,
+            command=self.ventana_cerradura_pos
         )
 
         boton_pos.pack(pady=5)
@@ -414,6 +415,108 @@ class InterfazThompson:
         )
 
         boton_concatenar.pack(pady=15)
+
+    def ventana_cerradura_pos(self):
+
+        ids = AFN.obtener_ids()
+
+        if not ids:
+            messagebox.showwarning(
+                "AFN faltante",
+                "Debes crear al menos un AFN"
+            )
+            return
+
+        ventana = tk.Toplevel(self.ventana)
+
+        ventana.title("Cerradura positiva")
+        ventana.geometry("350x250")
+
+        titulo = tk.Label(
+            ventana,
+            text="Cerradura Positiva (+)",
+            font=("Arial", 11, "bold")
+        )
+
+        titulo.pack(pady=15)
+
+        tk.Label(
+            ventana,
+            text="AFN:"
+        ).pack()
+
+        selector_afn = ttk.Combobox(
+            ventana,
+            values=ids,
+            state="readonly",
+            width=25
+        )
+
+        selector_afn.pack(pady=5)
+        selector_afn.current(0)
+
+        # Donde mete el nuevo ID del AFN
+
+        tk.Label(
+            ventana,
+            text="ID del nuevo AFN:"
+        ).pack()
+
+        entrada_id = tk.Entry(
+            ventana,
+            width=28
+        )
+
+        entrada_id.pack(pady=5)
+
+        # Cerradura
+
+        def aplicar():
+
+            id_afn = selector_afn.get()
+            nuevo_id = entrada_id.get().strip()
+
+            try:
+
+                if nuevo_id == "":
+                    raise ValueError(
+                        "Debes introducir un ID para el AFN resultante"
+                    )
+
+                afn = AFN.obtener_afn(id_afn)
+
+                afn.cerradura_pos(
+                    nuevo_id
+                )
+
+                messagebox.showinfo(
+                    "Cerradura realizada",
+                    f"El afn `{nuevo_id}` fue creado correctamente."
+                )
+
+                ventana.destroy()
+
+            except ValueError as error:
+
+                messagebox.showerror(
+                    "Error",
+                    str(error)
+                )
+
+        boton_aplicar = tk.Button(
+            ventana,
+            text="Aplicar",
+            width=15,
+            command=aplicar
+        )
+
+        boton_aplicar.pack(pady=15)
+
+
+
+
+
+        
 
 
 

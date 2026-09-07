@@ -750,32 +750,6 @@ class InterfazThompson:
 
         return niveles
 
-
-
-
-
-
-
-
-
-
-
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-        
-
     def ventana_ver_afn(self):
 
         # Verificamos que existe al menos un AFN
@@ -864,18 +838,29 @@ class InterfazThompson:
         label_alfabeto.pack()
 
 
+        frame_tabla = tk.Frame(ventana)
+        frame_tabla.pack(pady=15)
+
         tabla = ttk.Treeview(
-            ventana,
+            frame_tabla,
             columns=("origen", "simbolo", "destino"),
             show="headings",
-            height=12
+            height=8
         )
+
+        scroll_y = ttk.Scrollbar(
+            frame_tabla,
+            orient="vertical",
+            command=tabla.yview
+        )
+
+        tabla.configure(yscrollcommand=scroll_y.set)
 
         tabla.heading("origen", text="Estado origen")
         tabla.heading("simbolo", text="Simbolo")
         tabla.heading("destino", text="Estado destino")
 
-        tabla.column(
+        tabla.column(   
             "origen",
             width=150,
             anchor="center"
@@ -893,7 +878,8 @@ class InterfazThompson:
             anchor="center"
         )
 
-        tabla.pack(pady=15)
+        tabla.grid(row=0, column=0)
+        scroll_y.grid(row=0, column=1, sticky="ns")
 
         # Con esta funcion mostraremos el AFN
 
@@ -1058,9 +1044,7 @@ class InterfazThompson:
                     y
                 )
 
-        # ==========================================
-        # TRANSICIONES
-        # ==========================================
+        # Dibujamos las transiciones
 
         transiciones = afn.obtener_transiciones()
 
@@ -1083,9 +1067,7 @@ class InterfazThompson:
             nivel_origen = niveles[origen]
             nivel_destino = niveles[destino]
 
-            # ======================================
-            # 1. TRANSICIÓN HACIA SÍ MISMO
-            # ======================================
+            # Transicion al mismo estado
 
             if origen == destino:
 
@@ -1116,15 +1098,7 @@ class InterfazThompson:
 
                 continue
 
-            # ======================================
-            # 2. SALTO DEL INICIAL AL FINAL
-            #
-            # Caso típico de Kleene:
-            #
-            # inicial --ε--> aceptación
-            #
-            # Lo dibujamos por debajo del AFN.
-            # ======================================
+            # El salto del inicial al final va por debajo del AFN
 
             if (
                 origen == afn.edo_ini.id_edo
@@ -1149,24 +1123,34 @@ class InterfazThompson:
                     width=2
                 )
 
+                inicio_x = x1
+                inicio_y = y1 + radio_estado
+
+                fin_x = x2
+                fin_y = y2 + radio_estado
+
+                texto_x = (
+                    inicio_x
+                    + 2 * control_x
+                    + fin_x
+                ) / 4
+
+                texto_y = (
+                    inicio_y
+                    + 2 * control_y
+                    + fin_y
+                ) / 4
+
                 canvas.create_text(
-                    control_x,
-                    control_y - 12,
+                    texto_x,
+                    texto_y - 8,
                     text=simbolo,
                     font=("Arial", 11, "bold")
                 )
 
                 continue
 
-            # ======================================
-            # 3. TRANSICIONES HACIA ATRÁS
-            #
-            # Ejemplo de Kleene:
-            #
-            # final_antiguo --ε--> inicio_antiguo
-            #
-            # Las dibujamos por arriba.
-            # ======================================
+            # Las transiciones hacia atras van por arriba
 
             if nivel_destino < nivel_origen:
 
@@ -1200,18 +1184,34 @@ class InterfazThompson:
                     width=2
                 )
 
+                inicio_x = x1
+                inicio_y = y1 - radio_estado
+
+                fin_x = x2
+                fin_y = y2 - radio_estado
+
+                texto_x = (
+                    inicio_x
+                    + 2 * control_x
+                    + fin_x
+                ) / 4
+
+                texto_y = (
+                    inicio_y
+                    + 2 * control_y
+                    + fin_y
+                ) / 4
+
                 canvas.create_text(
-                    control_x,
-                    control_y - 10,
+                    texto_x,
+                    texto_y - 8,
                     text=simbolo,
                     font=("Arial", 11, "bold")
                 )
 
                 continue
 
-            # ======================================
-            # 4. TRANSICIONES NORMALES
-            # ======================================
+            # Transiciones hacia adelante
 
             dx = x2 - x1
             dy = y2 - y1
@@ -1244,10 +1244,7 @@ class InterfazThompson:
                 y2 - uy * radio_estado
             )
 
-            # ======================================
-            # Si existe transición en ambos sentidos
-            # curvamos esta flecha.
-            # ======================================
+            # Curvamos la flecha si hay transicion en ambos sentidos
 
             if (destino, origen) in pares:
 
@@ -1319,12 +1316,7 @@ class InterfazThompson:
                     font=("Arial", 11, "bold")
                 )
 
-        # ==========================================
-        # DIBUJAR ESTADOS
-        #
-        # IMPORTANTE:
-        # Esto va FUERA del for de transiciones.
-        # ==========================================
+        # Dibujamos los estados despues de las transiciones
 
         for estado in estados:
 
@@ -1365,9 +1357,7 @@ class InterfazThompson:
                 font=("Arial", 11, "bold")
             )
 
-        # ==========================================
-        # FLECHA DEL ESTADO INICIAL
-        # ==========================================
+        # Flecha que indica el estado inicial
 
         inicial = afn.edo_ini
 

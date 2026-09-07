@@ -72,7 +72,8 @@ class InterfazThompson:
         boton_opcional = tk.Button(
             self.ventana,
             text="opcional (?)",
-            width=25
+            width=25,
+            command=self.ventana_opcional
         )
 
         boton_opcional.pack(pady=5)
@@ -610,6 +611,101 @@ class InterfazThompson:
         )
 
         boton_aplicar.pack(pady=15)
+
+    def ventana_opcional(self):
+
+        ids = AFN.obtener_ids()
+
+        if not ids:
+            messagebox.showwarning(
+                "AFN faltante",
+                "Debes crear un AFN."
+            )
+            return
+
+        ventana = tk.Toplevel(self.ventana)
+
+        ventana.title("Opcional")
+        ventana.geometry("350x250")
+
+        titulo = tk.Label(
+            ventana,
+            text="AFN opcional",
+            font=("Arial", 16, "bold")
+        )
+
+        titulo.pack(pady=15)
+
+        tk.Label(
+            ventana,
+            text="AFN:"
+        ).pack()
+
+        selector_afn = ttk.Combobox(
+            ventana,
+            values=ids,
+            state="readonly",
+            width=25
+        )
+
+        selector_afn.pack(pady=5)
+        selector_afn.current(0)
+
+        tk.Label(
+            ventana,
+            text="ID del nuevo AFN:"
+        ).pack()
+
+        entrada_id = tk.Entry(
+            ventana,
+            width=28
+        )
+
+        entrada_id.pack(pady=5)
+
+        def aplicar():
+
+            id_afn = selector_afn.get()
+            nuevo_id = entrada_id.get().strip()
+
+            try:
+
+                if nuevo_id == "":
+                    raise ValueError(
+                        "Debe introducir un ID para el AFN resultante."
+                    )
+
+                afn = AFN.obtener_afn(id_afn)
+
+                afn.opcional(
+                    nuevo_id
+                )
+
+                messagebox.showinfo(
+                    "Operacion realizada",
+                    f"El AFN `{nuevo_id}` fue creado correctamente."
+                )
+
+                ventana.destroy()
+
+            except ValueError as error:
+
+                messagebox.showerror(
+                    "Error",
+                    str(error)
+                )
+
+        boton_aplicar = tk.Button(
+            ventana,
+            text="Aplicar",
+            width=15,
+            command=aplicar
+        )
+
+        boton_aplicar.pack(pady=15)
+
+
+
 
 
 

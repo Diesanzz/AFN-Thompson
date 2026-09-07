@@ -1,6 +1,6 @@
 import tkinter as tk
-import afn as AFN
 from tkinter import messagebox, ttk
+import math
 
 from afn import AFN
 
@@ -187,7 +187,7 @@ class InterfazThompson:
         ventana = tk.Toplevel(self.ventana)
 
         ventana.title("Ver AFN")
-        ventana.geometry("650x650")
+        ventana.geometry("900x800")
 
         titulo = tk.Label(
             ventana,
@@ -217,6 +217,30 @@ class InterfazThompson:
         selector_afn.pack(side="left", padx=5)
 
         selector_afn.current(0)
+
+        # Diagrama del AFN
+
+        frame_grafo = tk.LabelFrame(
+            ventana,
+            text="Diagrama del AFN"
+        )
+
+        frame_grafo.pack(
+            padx=15,
+            pady=10,
+            fill="both"
+        )
+
+        canvas = tk.Canvas(
+            frame_grafo,
+            width=850,
+            height=400
+        )
+
+        canvas.pack(
+            padx=10,
+            pady=10
+        )
 
         # Mostramos la info general
 
@@ -277,6 +301,11 @@ class InterfazThompson:
 
             if afn is None:
                 return
+            
+            self.dibujar_afn(
+                canvas,
+                afn
+            )
 
             estados = sorted(
                 afn.edos_afn,
@@ -333,6 +362,224 @@ class InterfazThompson:
 
         mostrar_afn()
 
+    def dibujar_afn(self, canvas, afn):
+
+        canvas.delete("all")
+
+        estados = sorted(
+            afn.edos_afn,
+            key=lambda e: e.id_edo
+        )
+
+        if not estados:
+            return
+
+        ancho = 850
+        alto = 400
+
+        centro_x = ancho / 2
+        centro_y = alto / 2
+
+        radio_x = 300
+        radio_y = 130
+
+        radio_estado = 25
+
+        posiciones = {}
+
+        cantidad = len(estados)
+
+        # Aqui vamos a calcular la posicion de cada estado
+
+        if cantidad == 1:
+
+            posiciones[estados[0].id_edo] = (
+                centro_x,
+                centro_y
+            )
+
+        else:
+
+            for i, estado in  enumerate(estados):
+
+                angulo = (
+                    -math.pi / 2
+                    + (2 * math.pi * i / cantidad)
+                )
+
+                x = centro_x + radio_x * math.cos(angulo)
+                y = centro_y + radio_y * math.sin(angulo)
+
+                posiciones[estado.id_edo] = (x, y)
+
+        # Obtenemos las transiciones 
+        transiciones = afn.obtener_transiciones()
+
+        pares = (
+            (origen, destino)
+            for origen, simbolo, destino in transiciones
+        )
+
+        # Dibujaremos las transiciones
+
+        for origen, simbolo, destino in transiciones:
+
+            x1, y1 = posiciones[origen]
+            x2, y2 = posiciones[destino]
+
+            #transicion a si mismo
+
+            if origen == destino:
+
+                canvas.create_line(
+                    x1, 
+                    y1 - radio_estado,
+                    x1 + 35,
+                    y1 - 60,
+                    x1 - 35,
+                    y1 - 60,
+                    x1, 
+                    y1 - radio_estado,
+                    smooth=True,
+                    arrow=tk.LAST
+                )
+
+                canvas.create_text(
+                    x1 + 5,
+                    y1 - 75,
+                    text = simbolo,
+                    font=("Arial", 11, "bold")
+                )
+
+                continue
+
+            # Distancia entre estados
+            dx = x2 - x1
+            dy = y2 - y1
+
+            distancia = math.sqrt(
+                dx ** 2 + dy ** 2
+            )
+
+            if distancia == 0:
+                continue
+
+            ux = dx / distancia
+            uy = dy / distancia
+
+            # Con esto impedimos que la linea entre al circulo
+            inicio_x = x1 + ux * radio_estado
+            inicio_y = y1 + uy * radio_estado
+
+            fin_x = x2 - ux * radio_estado
+            fin_y = y2 - uy * radio_estado
+
+            # Curvamos las flechas en caso de 
+            # transiciones en sentido contrario
+
+            if (destino, origen) in pares:
+
+                perpendicular_x = -uy
+                perpendicular_y = ux
+
+                desplazamiento = 30
+
+                medio_x = (
+                    (inicio_x + fin_x) / 2
+                    + perpendicular_y * desplazamiento
+                )
+
+                medio_y = (
+                    (inicio_y + fin_y) / 2
+                    + perpendicular_y * desplazamiento
+                )
+
+                canvas.create_line(
+                    inicio_x,
+                    inicio_y,
+                    medio_x,
+                    medio_y,
+                    fin_x,
+                    fin_y,
+                    smooth=True,
+                    arrow=tk.LAST,
+                    width=2
+                )
+
+                canvas.create_text(
+                    (medio_x + perpendicular_x * 10) + 5,
+                    medio_y + perpendicular_y * 10,
+                    text=simbolo,
+                    font=("Arial", 11, "bold")
+                )
+
+            else:
+
+                canvas.create_line(
+                    inicio_x,
+                    inicio_y,
+                    fin_x,
+                    fin_y,
+                    arrow=tk.LAST,
+                    width=2
+                )
+
+                medio_x = (inicio_x + fin_x) / 2
+                medio_y = (inicio_y + fin_y) / 2
+
+                canvas.create_text(
+                    medio_x + 5,
+                    medio_y - 12,
+                    text=simbolo,
+                    font=("Arial", 11, "bold")
+                )
+
+            # Dibujar estados
+
+            for estado in estados:
+                x, y = posiciones[estado.id_edo]
+
+                canvas.create_oval(
+                    x - radio_estado,
+                    y - radio_estado,
+                    x + radio_estado,
+                    y + radio_estado,
+                    width = 2
+                )
+
+                # Ponemos doble circulo para los edos 
+                # de aceptacion
+                if estado in afn.edos_acept:
+
+                    canvas.create_oval(
+                        x - radio_estado + 5,
+                        y - radio_estado + 5, 
+                        x + radio_estado - 5, 
+                        y + radio_estado - 5,
+                        width=2
+                    )
+
+                canvas.create_text(
+                    x + 5, 
+                    y, 
+                    text=str(estado.id_edo),
+                    font=("Arial", 11, "bold")
+                )
+
+            # Flecha de estado incial
+
+            inicial = afn.edo_ini
+
+            x, y = posiciones[inicial.id_edo]
+
+            canvas.create_line(
+                x - radio_estado - 50,
+                y,
+                x - radio_estado - 3,
+                y,
+                arrow=tk.LAST,
+                width=2
+            )
 
 
     def ejecutar(self):
